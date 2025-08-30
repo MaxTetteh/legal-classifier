@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Legal Document Classifier</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Arial, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 40px;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        background: #1f2937;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        padding: 30px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+
+      h1 {
+        grid-column: span 2;
+        font-size: 2rem;
+        color: #60a5fa;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #d1d5db;
+        margin-bottom: 6px;
+      }
+
+      textarea {
+        width: 100%;
+        height: 200px;
+        padding: 12px;
+        border: 2px solid #4b5563;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: #374151;
+        color: #f3f4f6;
+        resize: vertical;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #4b5563;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: #374151;
+        color: #f3f4f6;
+        cursor: pointer;
+      }
+
+      input[type="file"]::file-selector-button {
+        padding: 8px 16px;
+        background: #60a5fa;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      button[type="submit"] {
+        padding: 12px;
+        background: linear-gradient(90deg, #60a5fa, rgb(204, 51, 128));
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      button[type="submit"]:hover {
+        background: linear-gradient(90deg, #3b82f6, #973c76);
+      }
+
+      button[disabled] {
+        background: #9ca3af !important;
+        cursor: not-allowed;
+      }
+
+      .result {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 20px;
+        color: #1e293b;
+        min-height: 420px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+
+      .result h2 {
+        font-size: 1.25rem;
+        color: #2563eb;
+        margin-bottom: 12px;
+      }
+
+      .result .category {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #1d4ed8;
+        background: #dbeafe;
+        padding: 8px 12px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-bottom: 15px;
+      }
+
+      .result .summary-text {
+        background: #f3f4f6;
+        padding: 12px;
+        border-radius: 6px;
+        line-height: 1.5;
+        max-height: 250px;
+        overflow-y: auto;
+      }
+
+      /* Spinner */
+      .spinner {
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          grid-column: span 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Legal Document Classifier</h1>
+
+      <!-- Left column: Input -->
+      <div class="column">
+        <form method="POST" enctype="multipart/form-data" id="classify-form">
+          <div class="form-group">
+            <label for="text">Paste Document Text</label>
+            <textarea
+              name="text"
+              id="text"
+              placeholder="Enter or paste the legal document text here..."
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="file">Or Upload PDF</label>
+            <input type="file" name="file" id="file" accept="application/pdf" />
+          </div>
+          <br />
+          <button type="submit" id="submit-btn">Classify Document</button>
+        </form>
+      </div>
+
+      <!-- Right column: Results -->
+      <div class="column">
+        <div class="result" id="result-box">
+          <h2>Classification Results</h2>
+          <p><span class="label">Category:</span></p>
+          <p class="category" id="category-text">
+            {% if result %} {{ result.predicted_class }} {% else %} --- {% endif
+            %}
+          </p>
+          <p><span class="label">Summary:</span></p>
+          <div class="summary-text" id="summary-text">
+            {% if result %} {{ result.summary }} {% else %} No summary yet. {%
+            endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("classify-form");
+      const submitBtn = document.getElementById("submit-btn");
+      const categoryText = document.getElementById("category-text");
+      const summaryText = document.getElementById("summary-text");
+
+      form.addEventListener("submit", function () {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Classifying...';
+
+        categoryText.textContent = "Processing...";
+        summaryText.textContent =
+          "Please wait while we analyze your document...";
+      });
+    </script>
+  </body>
+</html>
