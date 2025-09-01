@@ -9,3 +9,5 @@ Clone with ' git clone ' and then in your terminal, run the command below
 Download dependencies with 'pip install -r requirements.txt'
 Use 'python app.py' to compile locally on your preferred Code Editor.
 This should spin up the localhost in your browser to view the web-app
+
+Building-model-final.ipynb and Buiding-model-testing.ipynb are the core python files used in model training and testing. You can run them by uploading the files onto Google Colab or with the links https://colab.research.google.com/drive/1xleWRst3siuEt1oe5kPldbmfDumTmk3u?usp=sharing and https://colab.research.google.com/drive/1FExYnpZ5KTI_2hepy0bdgSmXO7ThfW-I?usp=sharing
